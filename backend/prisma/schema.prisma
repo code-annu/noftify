@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Profile {
+  id           String    @id @default(uuid()) @db.Uuid
+  first_name   String
+  last_name    String?
+  company_name String
+  email        String    @unique()
+  is_deleted   Boolean   @default(false)
+  deleted_at   DateTime?
+  created_at   DateTime  @default(now())
+
+  apps App[]
+
+  @@map("profiles")
+}
+
+model App {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  is_active   Boolean  @default(true)
+  api_key     String   @unique
+  owner_id    String   @db.Uuid
+  created_at  DateTime @default(now())
+
+  owner Profile @relation(fields: [owner_id], references: [id])
+
+  users    AppUser[]
+  channels Channel[]
+
+  @@map("apps")
+}
+
+model AppUser {
+  id          String   @id @default(uuid()) @db.Uuid
+  external_id String
+  fullname    String
+  is_active   Boolean  @default(true)
+  email       String?
+  phone       String?
+  app_id      String   @db.Uuid
+  created_at  DateTime @default(now())
+
+  app App @relation(fields: [app_id], references: [id])
+
+  @@unique([app_id, external_id])
+  @@map("app_users")
+}
+
+model Channel {
+  id          String   @id @default(uuid()) @db.Uuid
+  type        String
+  name        String
+  app_id      String   @db.Uuid
+  is_enabled  Boolean  @default(true)
+  provider    String
+  config_json Json?
+  created_at  DateTime @default(now())
+
+  app App @relation(fields: [app_id], references: [id])
+
+  @@unique([app_id, type])
+  @@map("channels")
+}

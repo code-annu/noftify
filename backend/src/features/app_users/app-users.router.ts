@@ -22,5 +22,6 @@ appUsersNestedRouter.post(
   validateRequestBody(addAppUsersSchema),
   appUsersController.postAppUsers,
 );
+appUsersNestedRouter.delete("/", appUsersController.deleteAppUsers);
 
 export default appUsersRouter;

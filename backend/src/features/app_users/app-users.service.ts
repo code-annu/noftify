@@ -17,7 +17,7 @@ import AppUsersValidator from "../../validator/app.users.validator";
 
 @injectable()
 export default class AppUsersService {
-  private readonly APP_LIMIT = 100;
+  private readonly APP_USERS_LIMIT = 100;
   constructor(
     @inject(TYPES.AppUsersRepository)
     private readonly appUsersRepo: AppUsersRepository,
@@ -38,15 +38,21 @@ export default class AppUsersService {
       "Only app owner can add app users",
     );
 
-    const existingUser = await this.appUsersRepo.findByAppId(appId);
-    if (existingUser.length + appUsers.length > this.APP_LIMIT) {
+    const existingUsers = await this.appUsersRepo.findByAppId(appId);
+    if (existingUsers.length + appUsers.length > this.APP_USERS_LIMIT) {
       throw new AppUserLimitExceedError(
-        "You cannot add more app users than your app limit",
+        `You cannot add more app users than your app limit of ${this.APP_USERS_LIMIT}`,
       );
     }
 
     const createdAppUsers = await Promise.all(
       appUsers.map(async (appUser) => {
+        const existingUser = await this.appUsersRepo.findByExternalIdOfApp(
+          appUser.externalId,
+          appId,
+        );
+        if (existingUser) return existingUser;
+        
         return this.appUsersRepo.create({
           externalId: appUser.externalId,
           fullname: appUser.fullname,
@@ -102,12 +108,12 @@ export default class AppUsersService {
   public async deleteAppUser(input: DeleteAppUserInput) {
     const { ownerId, userId } = input;
     await this.profileValidator.ensureProfileExists(ownerId);
+    const appUser = await this.appUsersValidator.ensureAppUserExists(userId);
     await this.appValidator.ensureAppOwner(
       ownerId,
-      userId,
+      appUser.app.id,
       "Only app owner can delete app user",
     );
-    await this.appUsersValidator.ensureAppUserExists(userId);
     await this.appUsersRepo.delete(userId);
   }
 

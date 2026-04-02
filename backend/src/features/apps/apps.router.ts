@@ -5,6 +5,7 @@ import AppController from "./apps.controller";
 import { validateRequestBody } from "../../middleware/validate.request.middleware";
 import { createAppSchema, updateAppSchema } from "./apps.schema";
 import { appUsersNestedRouter } from "../app_users/app-users.router";
+import { channelNestedRouter } from "../channels/channel.router";
 
 const appRouter = Router();
 
@@ -29,5 +30,6 @@ appRouter.patch(
 appRouter.delete("/:appId", appController.deleteApp);
 
 appRouter.use("/:appId/users", appUsersNestedRouter);
+appRouter.use("/:appId/channels", channelNestedRouter);
 
 export default appRouter;

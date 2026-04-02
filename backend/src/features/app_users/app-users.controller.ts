@@ -45,7 +45,6 @@ export default class AppUsersController {
         throw new BadRequestError("App id is required");
       }
 
-      console.log(req.body.appUsers);
       const appUsers = await this.appUsersService.addAppUsers({
         ownerId: userId,
         appUsers: req.body.appUsers,
