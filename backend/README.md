@@ -1,65 +1,126 @@
-# Noftify Backend
+# 🚀 Noftify Backend
 
-A robust, scalable backend service built for multi-tenant application management, user tracking, and notification channel routing. Engineered with modern Node.js and TypeScript, this project emphasizes maintainability, strong typing, and modular architecture.
+> A scalable, multi-tenant notification infrastructure backend built with Node.js, Express, and PostgreSQL.
 
-## 🚀 Tech Stack & Core Libraries
+Noftify simplifies external communication by centralizing how applications manage their users, channels, and notifications. Instead of building custom notification logic for every new app, Noftify provides a unified API to manage owner profiles, registered applications, application-specific users, and dynamic notification channels.
 
-- **Platform & Framework:** Node.js, Express.js, TypeScript
-- **Database & ORM:** PostgreSQL managed via Prisma (`@prisma/client` & `@prisma/adapter-pg`)
-- **Validation:** Zod (for strict, type-safe API request validation)
-- **Dependency Injection:** InversifyJS & Reflect-Metadata (promoting decoupled and testable code)
-- **Authentication/Security:** Jose (for lightweight and modern JWT handling)
+This project is built with a strong focus on **clean architecture**, **maintainability**, and **type safety**, making it ready for enterprise-grade scalability.
 
-## 📁 Architecture & Design Patterns
+---
 
-The codebase is structured around a **Feature-Based Architecture**, rather than a standard MVC pattern. This scopes controllers, routers, and services by their domain, making the application easy to navigate and scale.
+## 🛠️ Tech Stack
 
-### Key Directories
-- **`src/features/`**: Contains vertically sliced modules:
-  - `profile`: Manages system owners and registration.
-  - `apps`: Handles multi-tenant applications and unique API Key provisioning.
-  - `app_users`: Tracks external end-users associated with specific apps.
-  - `channels`: Configurations for communication channels (Email, SMS, Push providers).
-- **`src/di/`**: Centralized Inversify Dependency Injection container setup.
-- **`src/middleware/`**: Shared Express middlewares (e.g., JWT authorization checks).
-- **`src/validator/`**: Zod schemas to guarantee data integrity before hitting services.
+- **Framework**: Express.js (Node.js)
+- **Language**: TypeScript
+- **Database**: PostgreSQL
+- **ORM / Schema Management**: Prisma
+- **Dependency Injection**: InversifyJS (`reflect-metadata`)
+- **Validation**: Zod
+- **Authentication**: JWT (using `jose`)
 
-## 🗄️ Data Models Overview
+---
 
-- **Profile**: represents the administrators/owners creating multiple apps under an account.
-- **App**: a tenant configured by a profile, holding a unique secure `api_key`.
-- **AppUser**: end-users residing within an `App` boundary, identified via an `external_id`.
-- **Channel**: notification delivery mechanisms. Stores dynamic configuration details securely via JSON.
+## 🏛️ Architecture & Project Structure
 
-## 🛠️ Getting Started
+The codebase strictly follows a **Feature-Based Modular Architecture** combined with the **Repository Pattern** and **Dependency Injection (IoC)**, ensuring a clean separation of concerns. The flow goes from Routers to Controllers, down to Services, and finally to Repositories.
 
-### Prerequisites
-- Node.js (v18+)
-- PostgreSQL Database
+```text
+src/
+├── features/        # Feature modules (app_users, apps, channels, profile)
+│   └── apps/
+│       ├── apps.controller.ts  # Handles HTTP requests & responses
+│       ├── apps.service.ts     # Core business logic layer
+│       ├── apps.repository.ts  # Database abstraction (Prisma)
+│       ├── apps.router.ts      # Express routing definitions
+│       ├── apps.schema.ts      # Zod validation schemas
+│       ├── apps.dto.ts         # Data Transfer Objects definition
+│       └── apps.mapper.ts      # Entity-to-DTO transformation logic
+├── di/              # Dependency Injection container (inversify.config.ts)
+├── middleware/      # Global middleware (Auth, Validation payloads)
+├── config/          # Environment and application configuration
+└── app.ts / server.ts # Application and server entry points
+```
 
-### Installation & Execution
+---
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+## ✨ Key Features
 
-2. **Environment variables:**
-   Ensure a `.env` file exists at the root of the `backend` directory.
-   ```env
-   PORT=3000
-   DATABASE_URL="postgresql://user:password@localhost:5432/noftify"
-   ```
+- **Multi-Tenant Architecture**: Supports multiple `Profiles`, where each profile can own multiple `Apps`. Each App manages its own scoped `AppUsers` and `Channels`.
+- **Inversion of Control (IoC)**: Uses InversifyJS for dependency injection, decoupling implementations and making the system highly testable. Classes retrieve dependencies (like Repositories/Services) via interfaces/types rather than instantiation.
+- **Robust Validation**: Zod intercepts incoming requests via middleware (`validateRequestBody`) to ensure type-safe and secure payloads before they ever hit the controllers.
+- **RESTful API Design**: Adheres to strict REST principles utilizing nested routing hierarchies (e.g., `/api/apps/:appId/users`) to represent resource relationships.
+- **Secure Authentication**: Custom authorization middleware utilizing `jose` for fast, secure cryptographic JWT validation.
 
-3. **Database Preparation:**
-   Generate Prisma client bindings:
-   ```bash
-   npx prisma generate
-   ```
+---
 
-4. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
+## 📡 API Documentation (Sample Endpoints)
 
-The API will now be listening locally at `http://localhost:<PORT>`.
+All endpoints below require authentication via an `Authorization` header.
+
+### 📱 Apps Management (`/api/apps`)
+- `POST /` - Create a new app workspace (Expects `createAppSchema` payload)
+- `GET /` - Retrieve all apps for the authenticated user profile
+- `GET /:appId` - Retrieve details for a specific app
+- `PATCH /:appId` - Update an app's configuration (Expects `updateAppSchema` payload)
+- `DELETE /:appId` - Remove an app from the profile
+
+### 👥 App Users (`/api/apps/:appId/users`)
+- *(Nested Router)* Manages external users bounded directly to a specific application context, mapping their external IDs, contact info, and activity status.
+
+### 📣 Channels (`/api/apps/:appId/channels`)
+- *(Nested Router)* Manages notification channel setups (e.g., email, SMS, push providers). Stores provider specifics and raw JSON configuration securely.
+
+---
+
+## 🚀 Setup Instructions
+
+Follow these steps to run the backend locally:
+
+### 1. Clone the repository
+```bash
+git clone <your-repo-url>
+cd backend
+```
+
+### 2. Install dependencies
+```bash
+npm install
+```
+
+### 3. Environment Variables
+Create a `.env` file in the root directory. You will need a PostgreSQL instance running.
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/noftify"
+# Add any other required variables defined in src/config
+```
+
+### 4. Setup Database
+Push the Prisma schema to your PostgreSQL database and generate the Prisma Client for the customized output directory (`src/generated/prisma`):
+```bash
+npx prisma db push
+npx prisma generate
+```
+
+### 5. Run the Development Server
+Start the server in watch mode using nodemon & ts-node:
+```bash
+npm run dev
+```
+The server is successfully running when the foundational REST endpoint (`GET /`) is accessible.
+
+---
+
+## 🌟 Project Highlights (Why this stands out)
+
+1. **Enterprise-Grade Patterns**: Unlike simple MVC boilerplate apps, this backend natively implements Dependency Injection and the Repository pattern. This effectively decouples the data access layer from the HTTP layer, creating a flexible codebase that is immensely easier to unit test and maintain.
+2. **Predictable Data Contracts**: The extensive use of DTOs (Data Transfer Objects) and Mappers ensures the API never accidentally leaks sensible database internals (like deleted status flags or cascading IDs). It strictly returns what the mapper shapes.
+3. **Fail-Fast Validation Checkpoints**: Request validation with Zod isn't hardcoded into controllers. It operates at the router middleware level. Malformed requests instantly yield a `400 Bad Request` error before any business computation is wasted, optimizing service layer efficiency.
+
+---
+
+## 🔮 Future Improvements
+
+- **Message Queuing**: Introduce job queues (e.g., BullMQ or RabbitMQ) for processing mass notification deployments asynchronously.
+- **Caching Layer**: Integrate Redis to cache frequent reads (like channel configurations mapped to an App) and reduce database query roundtrips.
+- **Comprehensive E2E Testing**: Add frameworks like Jest and Supertest. The current DI architecture makes mocking services and databases incredibly seamless.
+- **Swagger/OpenAPI Documentation**: Automatically generate interactive API documentation from the existing Zod schemas.
