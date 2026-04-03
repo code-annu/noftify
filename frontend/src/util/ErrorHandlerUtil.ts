@@ -1,0 +1,43 @@
+import { AxiosError } from "axios";
+
+export enum ErrorType {
+  NOT_FOUND = "NOT_FOUND",
+  UNAUTHORIZED = "UNAUTHORIZED",
+  FORBIDDEN = "FORBIDDEN",
+  BAD_REQUEST = "BAD_REQUEST",
+  INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR",
+  UNPROCESSABLE_ENTITY = "UNPROCESSABLE_ENTITY",
+  CONFLICT = "CONFLICT",
+  TOO_MANY_REQUESTS = "TOO_MANY_REQUESTS",
+  MISSING_TOKEN = "MISSING_TOKEN",
+  INVALID_TOKEN = "INVALID_TOKEN",
+  MISSING_API_KEY = "MISSING_API_KEY",
+  INVALID_API_KEY = "INVALID_API_KEY",
+  APP_LIMIT_EXCEED = "APP_LIMIT_EXCEED",
+  APP_USER_LIMIT_EXCEED = "APP_USER_LIMIT_EXCEED",
+}
+
+export interface NoftifyError {
+  code: number;
+  error: {
+    type: ErrorType;
+    message: string;
+  };
+  status: string;
+}
+
+export const mapToNoftifyError = (err: any): NoftifyError => {
+  if (err instanceof AxiosError) {
+    const errorData = err.response?.data as NoftifyError;
+    return errorData;
+  } else {
+    return {
+      code: 500,
+      error: {
+        type: ErrorType.INTERNAL_SERVER_ERROR,
+        message: "Something went wrong",
+      },
+      status: "Internal Server Error",
+    };
+  }
+};
